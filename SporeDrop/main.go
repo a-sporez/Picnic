@@ -126,7 +126,7 @@ func trimMemory(messages []Message, limit int) []Message {
 
 func callAgent(userID string) (string, error) {
 	AgentURL := os.Getenv("AGENT_URL")
-	bearerToken := os.Getenv("AGENT_TOKEN") // this is safer than hardcoding
+	bearerToken := os.Getenv("AGENT_TOKEN")
 
 	if AgentURL == "" || bearerToken == "" {
 		log.Fatal("Missing AGENT_URL or AGENT_TOKEN in .env")
