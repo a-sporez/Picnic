@@ -32,7 +32,7 @@ type ChatOutput struct {
 	Reply string `json:"reply"`
 }
 
-type MistralRequest struct {
+type AgentRequest struct {
 	Messages    []Message `json:"messages"`
 	Temperature float32   `json:"temperature"`
 	Stream      bool      `json:"stream"`
@@ -43,7 +43,7 @@ type Message struct {
 	Content string `json:"content"`
 }
 
-type MistralResponse struct {
+type AgentResponse struct {
 	Choices []struct {
 		Message struct {
 			Content string `json:"content"`
@@ -100,9 +100,9 @@ func handleChat(c *gin.Context) {
 		})
 	}
 
-	reply, err := callMistral(input.UserID)
+	reply, err := callAgent(input.UserID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Mistral error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Agent error"})
 		return
 	}
 
@@ -124,16 +124,16 @@ func trimMemory(messages []Message, limit int) []Message {
 	return messages[len(messages)-limit:]
 }
 
-func callMistral(userID string) (string, error) {
-	mistralURL := os.Getenv("MISTRAL_URL")
-	bearerToken := os.Getenv("MISTRAL_TOKEN") // this is safer than hardcoding
+func callAgent(userID string) (string, error) {
+	AgentURL := os.Getenv("AGENT_URL")
+	bearerToken := os.Getenv("AGENT_TOKEN") // this is safer than hardcoding
 
-	if mistralURL == "" || bearerToken == "" {
-		log.Fatal("Missing MISTRAL_URL or MISTRAL_TOKEN in .env")
+	if AgentURL == "" || bearerToken == "" {
+		log.Fatal("Missing AGENT_URL or AGENT_TOKEN in .env")
 	}
 
 	history := trimMemory(memoryStore[userID], 5)
-	payload := MistralRequest{
+	payload := AgentRequest{
 		Messages:    history, // use context window memory
 		Temperature: 0.7,
 		Stream:      false,
@@ -141,7 +141,7 @@ func callMistral(userID string) (string, error) {
 
 	jsonData, _ := json.Marshal(payload)
 
-	req, err := http.NewRequest("POST", mistralURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", AgentURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
 	}
@@ -156,9 +156,9 @@ func callMistral(userID string) (string, error) {
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
-	log.Printf("Mistral response body: %s", body)
+	log.Printf("Agent response body: %s", body)
 
-	var result MistralResponse
+	var result AgentResponse
 	if err := json.Unmarshal(body, &result); err != nil {
 		return "", err
 	}
